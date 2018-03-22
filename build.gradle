@@ -1,0 +1,24 @@
+group 'org.solteam.stellar'
+version '0.2.0'
+
+apply plugin: 'java'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+jar {
+    manifest {
+        attributes 'Implementation-Title': 'stellar-sdk',
+                'Implementation-Version': version
+    }
+    archiveName 'stellar-sdk.jar'
+    duplicatesStrategy DuplicatesStrategy.EXCLUDE
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'com.google.guava:guava:24.1-jre'
+}
