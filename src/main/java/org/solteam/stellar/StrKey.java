@@ -1,6 +1,5 @@
 package org.solteam.stellar;
 
-import com.google.common.io.BaseEncoding;
 import org.solteam.stellar.xdr.FormatException;
 
 import java.io.ByteArrayOutputStream;
@@ -11,20 +10,20 @@ import java.util.Arrays;
 
 class StrKey {
     public enum VersionByte {
-        ACCOUNT_ID((byte)(6 << 3)), // G
-        SEED((byte)(18 << 3)), // S
-        PRE_AUTH_TX((byte)(19 << 3)), // T
-        SHA256_HASH((byte)(23 << 3)); // X
+        ACCOUNT_ID((byte) (6 << 3)), // G
+        SEED((byte) (18 << 3)), // S
+        PRE_AUTH_TX((byte) (19 << 3)), // T
+        SHA256_HASH((byte) (23 << 3)); // X
         private final byte value;
+
         VersionByte(byte value) {
             this.value = value;
         }
+
         public int getValue() {
             return value;
         }
     }
-
-    private static BaseEncoding base32Encoding = BaseEncoding.base32().upperCase().omitPadding();
 
     public static String encodeStellarAccountId(byte[] data) {
         char[] encoded = encodeCheck(VersionByte.ACCOUNT_ID, data);
@@ -75,7 +74,9 @@ class StrKey {
             // We don't want secret seed to be stored as String in memory because of security reasons. It's impossible
             // to erase it from memory when we want it to be erased (ASAP).
             CharArrayWriter charArrayWriter = new CharArrayWriter(unencoded.length);
-            OutputStream charOutputStream = StrKey.base32Encoding.encodingStream(charArrayWriter);
+
+            OutputStream charOutputStream = new ByteArrayOutputStream();
+            outputStream.write(Base32.encode(charArrayWriter.toString().getBytes("UTF-8")).getBytes());
             charOutputStream.write(unencoded);
             char[] charsEncoded = charArrayWriter.toCharArray();
 
@@ -107,29 +108,36 @@ class StrKey {
             bytes[i] = (byte) encoded[i];
         }
 
-        byte[] decoded = StrKey.base32Encoding.decode(java.nio.CharBuffer.wrap(encoded));
-        byte decodedVersionByte = decoded[0];
-        byte[] payload  = Arrays.copyOfRange(decoded, 0, decoded.length-2);
-        byte[] data     = Arrays.copyOfRange(payload, 1, payload.length);
-        byte[] checksum = Arrays.copyOfRange(decoded, decoded.length-2, decoded.length);
+        try {
+            byte[] decoded = Base32.decode(java.nio.CharBuffer.wrap(encoded).toString());
 
-        if (decodedVersionByte != versionByte.getValue()) {
-            throw new FormatException("Version byte is invalid");
+            byte decodedVersionByte = decoded[0];
+            byte[] payload = Arrays.copyOfRange(decoded, 0, decoded.length - 2);
+            byte[] data = Arrays.copyOfRange(payload, 1, payload.length);
+            byte[] checksum = Arrays.copyOfRange(decoded, decoded.length - 2, decoded.length);
+
+            if (decodedVersionByte != versionByte.getValue()) {
+                throw new FormatException("Version byte is invalid");
+            }
+
+            byte[] expectedChecksum = StrKey.calculateChecksum(payload);
+
+            if (!Arrays.equals(expectedChecksum, checksum)) {
+                throw new FormatException("Checksum invalid");
+            }
+
+            if (VersionByte.SEED.getValue() == decodedVersionByte) {
+                Arrays.fill(bytes, (byte) 0);
+                Arrays.fill(decoded, (byte) 0);
+                Arrays.fill(payload, (byte) 0);
+            }
+
+
+            return data;
+        } catch (Base32.DecodingException e) {
+            e.printStackTrace();
+            return new byte[]{};
         }
-
-        byte[] expectedChecksum = StrKey.calculateChecksum(payload);
-
-        if (!Arrays.equals(expectedChecksum, checksum)) {
-            throw new FormatException("Checksum invalid");
-        }
-
-        if (VersionByte.SEED.getValue() == decodedVersionByte) {
-            Arrays.fill(bytes, (byte) 0);
-            Arrays.fill(decoded, (byte) 0);
-            Arrays.fill(payload, (byte) 0);
-        }
-
-        return data;
     }
 
     protected static byte[] calculateChecksum(byte[] bytes) {
@@ -154,8 +162,8 @@ class StrKey {
         }
 
         // little-endian
-        return new byte[] {
-            (byte)crc,
-            (byte)(crc >>> 8)};
+        return new byte[]{
+                (byte) crc,
+                (byte) (crc >>> 8)};
     }
 }

@@ -19,9 +19,6 @@ import java.security.Signature;
 import java.security.SignatureException;
 import java.util.Arrays;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-
 /**
  * Holds a Stellar keypair.
  */
@@ -47,7 +44,10 @@ public class KeyPair {
    * @param privateKey
    */
   public KeyPair(EdDSAPublicKey publicKey, EdDSAPrivateKey privateKey) {
-    mPublicKey = checkNotNull(publicKey, "publicKey cannot be null");
+    if (publicKey == null) {
+      throw new NullPointerException(String.valueOf("publicKey cannot be null"));
+    }
+    mPublicKey = publicKey;
     mPrivateKey = privateKey;
   }
 

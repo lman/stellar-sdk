@@ -20,5 +20,4 @@ jar {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'com.google.guava:guava:24.1-jre'
 }
