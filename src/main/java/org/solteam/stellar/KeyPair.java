@@ -45,7 +45,7 @@ public class KeyPair {
    */
   public KeyPair(EdDSAPublicKey publicKey, EdDSAPrivateKey privateKey) {
     if (publicKey == null) {
-      throw new NullPointerException(String.valueOf("publicKey cannot be null"));
+      throw new NullPointerException("publicKey cannot be null");
     }
     mPublicKey = publicKey;
     mPrivateKey = privateKey;
