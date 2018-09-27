@@ -20,4 +20,5 @@ jar {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
+    compile 'net.i2p.crypto:eddsa:0.3.0'
 }
